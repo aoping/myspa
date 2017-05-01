@@ -133,10 +133,18 @@ spa.shell = (function(){
 		setJqueryMap();
 
 		spa.chat.configModule( {
-			set_chat_anchor : setChatAnchor
+			set_chat_anchor : setChatAnchor,
+			chat_model      : spa.model.chat,
+      		people_model    : spa.model.people
 
 		} );
     	spa.chat.initModule( jqueryMap.$container );
+
+    	spa.avtr.configModule({
+	      chat_model   : spa.model.chat,
+	      people_model : spa.model.people
+	    });
+	    spa.avtr.initModule( jqueryMap.$nav );
 		// jqueryMap.$chat.bind('click',onClickChat);
 		$(window)
 			.bind('resize',onResize)
