@@ -1,19 +1,19 @@
 spa.shell = (function(){
+	'use strict';
 	var configMap = {
-		main_html:	"<div id=\"spa\">"
-			+"      <div class=\"spa-shell-head\">"
-			+"        <div class=\"spa-shell-head-logo\"></div>"
-			+"        <div class=\"spa-shell-head-acct\"></div>"
-			+"        <div class=\"spa-shell-head-search\"></div>"
-			+"      </div>"
-			+"      <div class=\"spa-shell-main\">"
-			+"        <div class=\"spa-shell-main-nav\"></div>"
-			+"        <div class=\"spa-shell-main-content\"></div>"
-			+"      </div>"
-			+"      <div class=\"spa-shell-foot\"></div>"
-			+"      <div class=\"spa-shell-chat\"></div>"
-			+"      <div class=\"spa-shell-modal\"></div>"
-			+"    </div>",
+		main_html:	'<div class="spa-shell-head">'
+			          + '<div class="spa-shell-head-logo">'
+			            + '<h1>SPA</h1>'
+			            + '<p>javascript end to end</p>'
+			          + '</div>'
+			          + '<div class="spa-shell-head-acct"></div>'
+			        + '</div>'
+			        + '<div class="spa-shell-main">'
+			          + '<div class="spa-shell-main-nav"></div>'
+			          + '<div class="spa-shell-main-content"></div>'
+			        + '</div>'
+			        + '<div class="spa-shell-foot"></div>'
+			        + '<div class="spa-shell-modal"></div>',
 		chat_extend_time: 1000,
 		chat_retract_time: 300,
 		chat_extend_height: 450,
@@ -27,14 +27,15 @@ spa.shell = (function(){
 				},
 	jqueryMap = {}, // 缓存jquery对象
 	setJqueryMap,onHashchange, setChatAnchor,initModule,
-	onResize
+	onResize,onTapAcct,onLogin,onLogout
 	;
 
 	setJqueryMap = function(){
 		var $container=stateMap.$container;
 		jqueryMap = {
 			$container: $container,
-			$chat: $container.find('.spa-shell-chat')
+			$acct      : $container.find('.spa-shell-head-acct'),
+      		$nav       : $container.find('.spa-shell-main-nav')
 		}
 	}
 
@@ -104,21 +105,59 @@ spa.shell = (function(){
 	    return true;
 	  };
 
+	  onTapAcct = function ( event ) {
+	    var acct_text, user_name, user = spa.model.people.get_user();
+	    if ( user.get_is_anon() ) {
+	      user_name = prompt( 'Please sign-in' );
+	      spa.model.people.login( user_name );
+	      jqueryMap.$acct.text( '... processing ...' );
+	    }
+	    else {
+	     spa.model.people.logout();
+	    }
+	    return false;
+	  };
+
+	  onLogin = function ( event, login_user ) {
+	    jqueryMap.$acct.text( login_user.name );
+	  };
+
+	  onLogout = function ( event, logout_user ) {
+	    jqueryMap.$acct.text( 'Please sign-in' );
+	  };
+
+
 	initModule = function ($container){
 		stateMap.$container=$container;
 		$container.html(configMap.main_html);
 		setJqueryMap();
 
 		spa.chat.configModule( {
-			set_chat_anchor : setChatAnchor
+			set_chat_anchor : setChatAnchor,
+			chat_model      : spa.model.chat,
+      		people_model    : spa.model.people
 
 		} );
-    	spa.chat.initModule( jqueryMap.$chat );
+    	spa.chat.initModule( jqueryMap.$container );
+
+    	spa.avtr.configModule({
+	      chat_model   : spa.model.chat,
+	      people_model : spa.model.people
+	    });
+	    spa.avtr.initModule( jqueryMap.$nav );
 		// jqueryMap.$chat.bind('click',onClickChat);
 		$(window)
 			.bind('resize',onResize)
 			.bind('hashchange',onHashchange)
 			.trigger('hashchange');
+
+
+		$.gevent.subscribe( $container, 'spa-login',  onLogin  );
+	    $.gevent.subscribe( $container, 'spa-logout', onLogout );
+
+	    jqueryMap.$acct
+	      .text( 'Please sign-in')
+	      .bind( 'utap', onTapAcct );
 	}
 
 
